@@ -44,9 +44,13 @@ def ayarlari_yukle():
     sys.exit("HATA: ayarlar.json yok (ayarlar.ornek.json'u kopyalayıp doldurun).")
 
 def yol_cevir(s):
-    """Windows yolu (C:\\...) → WSL yolu (/mnt/c/...)."""
+    """Yolu platforma uyarla: WSL'de çalışırken Windows yolu (C:\\...) /mnt/c/... olur;
+    Windows'ta çalışırken olduğu gibi kalır. WSL yolu Windows'ta da geri çevrilir."""
     s = s.strip().replace("\\", "/")
-    if len(s) > 1 and s[1] == ":":
+    if os.name == "nt":
+        if s.startswith("/mnt/") and len(s) > 6:
+            s = f"{s[5].upper()}:{s[6:]}"
+    elif len(s) > 1 and s[1] == ":":
         s = f"/mnt/{s[0].lower()}{s[2:]}"
     return Path(s)
 
