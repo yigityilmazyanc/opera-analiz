@@ -75,9 +75,11 @@ def main():
     e = EPTR2(username="yigityilmazyanc@outlook.com", password=pw)
     print(f"Aralık: {bas} → {bit}  |  Dosya: {xlsx.name}")
 
-    print("-> fiyatlar (mcp/smp/wap)")
+    print("-> fiyatlar (mcp/smp/wap) + sistem yönü (mcp-smp-imb)")
     mcp = cek(e, "mcp", bas, bit); smp = cek(e, "smp", bas, bit); wap = cek(e, "wap", bas, bit)
-    seriler = {"F": ts_dict(mcp, "price"), "G": ts_dict(smp, "systemMarginalPrice"),
+    imb = cek(e, "mcp-smp-imb", bas, bit)
+    seriler = {"E": ts_dict(imb, "systemStatus"),
+               "F": ts_dict(mcp, "price"), "G": ts_dict(smp, "systemMarginalPrice"),
                "H": ts_dict(mcp, "priceUsd"), "I": ts_dict(wap, "wap")}
     for ad, (pp_id, uevcb_id, kolonlar) in SANTRALLER.items():
         print(f"-> {ad} (uevm + ilk/son kgüp)")
@@ -92,14 +94,23 @@ def main():
     for gun in range(1, gun_sayisi + 1):
         for saat in range(24):
             r = ILK_SATIR + (gun - 1) * 24 + saat
-            herhangi = any((gun, saat) in s for s in seriler.values())
-            if herhangi:  # tarih/saat hücrelerini de gerçek değere çevir (dış bağlantı formülü kopuk)
-                ws.cell(r, 1).value = dt.datetime(yil, ay, gun, saat)
-                ws.cell(r, 2).value = f"{saat:02d}:00"
+            # tarih/saat TÜM ay için yazılır (C=INT(A), D=MONTH(A) formülleri çalışsın)
+            ws.cell(r, 1).value = dt.datetime(yil, ay, gun, saat)
+            ws.cell(r, 2).value = f"{saat:02d}:00"
             for kolon, s in seriler.items():
                 if (gun, saat) in s:
-                    ws[f"{kolon}{r}"].value = float(s[(gun, saat)])
+                    v = s[(gun, saat)]
+                    ws[f"{kolon}{r}"].value = v if isinstance(v, str) else float(v)
                     yazilan[kolon] += 1
+    # kopuk dış-bağlantı formüllerini temizle: '[1]...' başka bilgisayardaki kaynak dosyaya
+    # bakıyordu, bir daha hesaplanamaz — Excel'de 0/#REF çöpü olarak görünüyordu.
+    temiz = 0
+    for r in range(ILK_SATIR, ILK_SATIR + gun_sayisi * 24):
+        for c in range(1, ws.max_column + 1):
+            v = ws.cell(r, c).value
+            if isinstance(v, str) and v.startswith("=") and "[1]" in v:
+                ws.cell(r, c).value = None; temiz += 1
+    if temiz: print(f"Temizlenen kopuk formül hücresi: {temiz}")
     try:
         wb.save(xlsx)
     except PermissionError:
