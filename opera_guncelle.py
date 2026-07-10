@@ -7,25 +7,65 @@ Opera Analiz — EPİAŞ Şeffaflık verilerini Excel'e işler.
     ARPACIK HES  → AB / AC / AF     YAVUZ HES → AI / AJ / AM     MİDİLLİ HES → AP / AQ / AT
 Ayrıca Tarih (A) ve Saat (B) hücreleri gerçek değerle yazılır (kopuk dış-bağlantı formülleri yerine).
 
+Ayarlar (API kullanıcısı/şifresi, Excel klasörü, dosya adı kalıbı): ayarlar.json —
+yoksa ayarlar.ornek.json'u o adla kopyalayıp doldur. Dosya adı içinde bulunulan aya göre
+otomatik türetilir: "Opera Analiz {AY} {YIL}.xlsx" → "Opera Analiz Agustos 2026.xlsx"
+(Türkçe ay adı, İngilizce karakterlerle; gerçek Türkçe yazım da denenir).
+
 Kullanım:
   python opera_guncelle.py                 # sadece Excel'i güncelle
   python opera_guncelle.py --push          # + kopyasını repoya koy, commit'le, GitHub'a pushla
   python opera_guncelle.py --ay 2026-08    # başka ay (varsayılan: içinde bulunulan ay)
-  python opera_guncelle.py --dosya "C:\\...\\baska.xlsx"
+  python opera_guncelle.py --dosya "C:\\...\\baska.xlsx"   # kalıbı ezmek için
 
-Şifre: ~/.epias_pw (bu dosya ve repo şifre İÇERMEZ).
+Şifre repoya asla girmez (ayarlar.json gitignore'da).
 NOT: Excel dosyası açıkken kaydedilemez — Excel'i kapatıp yeniden çalıştır.
 """
-import argparse, datetime as dt, shutil, subprocess, sys
+import argparse, datetime as dt, json, os, shutil, subprocess, sys
 from pathlib import Path
 import pandas as pd
 import openpyxl
 from eptr2 import EPTR2
 
 HERE = Path(__file__).resolve().parent
-VARSAYILAN_XLSX = Path("/mnt/c/Users/yigit/Downloads/Opera Analiz Temmuz 2026.xlsx")
 SEKME = "Opera Enerji Veri"
 ILK_SATIR = 3                      # veri 3. satırdan başlar (başlık 2. satır)
+
+AY_ADI = {1: "Ocak", 2: "Subat", 3: "Mart", 4: "Nisan", 5: "Mayis", 6: "Haziran",
+          7: "Temmuz", 8: "Agustos", 9: "Eylul", 10: "Ekim", 11: "Kasim", 12: "Aralik"}
+AY_ADI_TR = {2: "Şubat", 5: "Mayıs", 8: "Ağustos", 9: "Eylül", 11: "Kasım", 12: "Aralık"}
+
+def ayarlari_yukle():
+    for ad in ("ayarlar.json", "ayarlar.ornek.json"):
+        p = HERE / ad
+        if p.exists():
+            return {k: v for k, v in json.loads(p.read_text(encoding="utf-8")).items()
+                    if not k.startswith("_")}
+    sys.exit("HATA: ayarlar.json yok (ayarlar.ornek.json'u kopyalayıp doldurun).")
+
+def yol_cevir(s):
+    """Windows yolu (C:\\...) → WSL yolu (/mnt/c/...)."""
+    s = s.strip().replace("\\", "/")
+    if len(s) > 1 and s[1] == ":":
+        s = f"/mnt/{s[0].lower()}{s[2:]}"
+    return Path(s)
+
+def sifre_bul(ayar):
+    if os.environ.get("EPIAS_PW"): return os.environ["EPIAS_PW"]
+    if ayar.get("api_sifre"): return ayar["api_sifre"]
+    f = Path(ayar.get("api_sifre_dosyasi", "~/.epias_pw")).expanduser()
+    if f.exists(): return f.read_text(encoding="utf-8").splitlines()[0].strip()
+    sys.exit("HATA: şifre yok — EPIAS_PW değişkeni, ayarlar.json api_sifre ya da şifre dosyası gerekli.")
+
+def dosya_bul(ayar, yil, ay):
+    klasor = yol_cevir(ayar["dosya_klasoru"])
+    kalip = ayar.get("dosya_adi_kalibi", "Opera Analiz {AY} {YIL}.xlsx")
+    adaylar = [kalip.replace("{AY}", AY_ADI[ay]).replace("{YIL}", str(yil))]
+    if ay in AY_ADI_TR:  # gerçek Türkçe yazımla da dene (Ağustos, Eylül...)
+        adaylar.append(kalip.replace("{AY}", AY_ADI_TR[ay]).replace("{YIL}", str(yil)))
+    for ad in adaylar:
+        if (klasor / ad).exists(): return klasor / ad
+    sys.exit(f"HATA: dosya bulunamadı: {klasor} içinde {' veya '.join(adaylar)}")
 
 ORG_ID = "104782"                  # OPERA ENERJİ A.Ş. (TOPLAYICI) — 40X000000104782K
 # ad → (rt-gen pp_id, kgup uevcb_id, [UEVM, İLK KGÜP, SON KGÜP] sütunları)
@@ -58,21 +98,24 @@ def cek(e, key, bas, bit, **kw):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ay", default=dt.date.today().strftime("%Y-%m"))
-    ap.add_argument("--dosya", default=str(VARSAYILAN_XLSX))
+    ap.add_argument("--dosya", default="", help="ayarlar.json kalıbını ezmek için tam yol")
     ap.add_argument("--push", action="store_true", help="kopyayı repoya koy + git push")
     a = ap.parse_args()
 
+    ayar = ayarlari_yukle()
     yil, ay = map(int, a.ay.split("-"))
     bas = dt.date(yil, ay, 1)
     bugun = dt.date.today()
     bit = min(bugun + dt.timedelta(days=1),                       # yarının PTF'si 14:00'ten sonra var
               (bas + dt.timedelta(days=40)).replace(day=1) - dt.timedelta(days=1))
     if bit < bas: sys.exit(f"HATA: {a.ay} henüz başlamadı.")
-    xlsx = Path(a.dosya)
-    if not xlsx.exists(): sys.exit(f"HATA: dosya yok: {xlsx}")
+    if a.dosya:
+        xlsx = yol_cevir(a.dosya)
+        if not xlsx.exists(): sys.exit(f"HATA: dosya yok: {xlsx}")
+    else:
+        xlsx = dosya_bul(ayar, yil, ay)
 
-    pw = (Path.home() / ".epias_pw").read_text(encoding="utf-8").splitlines()[0].strip()
-    e = EPTR2(username="yigityilmazyanc@outlook.com", password=pw)
+    e = EPTR2(username=ayar["api_kullanici"], password=sifre_bul(ayar))
     print(f"Aralık: {bas} → {bit}  |  Dosya: {xlsx.name}")
 
     print("-> fiyatlar (mcp/smp/wap) + sistem yönü (mcp-smp-imb)")

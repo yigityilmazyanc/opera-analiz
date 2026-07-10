@@ -17,12 +17,28 @@ Platformu'ndan (eptr2) doldurur. Ayın başından bugüne, her gün güncelleneb
 
 Org: OPERA ENERJİ A.Ş. (TOPLAYICI), org_id 104782 (40X000000104782K).
 
+## Ayarlar (`ayarlar.json`)
+`ayarlar.ornek.json` dosyasını **`ayarlar.json`** adıyla kopyala ve doldur
+(gitignore'dadır, GitHub'a çıkmaz):
+
+| Alan | Açıklama |
+|---|---|
+| `api_kullanici` | EPİAŞ Şeffaflık kullanıcı e-postası |
+| `api_sifre` | Şifre (boş bırakılırsa `api_sifre_dosyasi` okunur; `EPIAS_PW` ortam değişkeni hepsini ezer) |
+| `api_sifre_dosyasi` | Şifre dosyası yolu (varsayılan `~/.epias_pw`) |
+| `dosya_klasoru` | Excel'in klasörü — Windows (`C:\...`) veya WSL (`/mnt/c/...`) yazımı |
+| `dosya_adi_kalibi` | `Opera Analiz {AY} {YIL}.xlsx` — `{AY}` içinde bulunulan ayın Türkçe adı, İngilizce karakterlerle (Ocak, Subat, Mart, Nisan, Mayis, Haziran, Temmuz, Agustos, Eylul, Ekim, Kasim, Aralik). Gerçek Türkçe yazım (Ağustos, Eylül...) de otomatik denenir. |
+
+Dosya adı aya göre kendiliğinden türetilir — **ay değişince ayar değiştirmek gerekmez**,
+yeni ayın dosyasını klasöre koymak yeterli.
+
 ## Kullanım
 ```bash
 # Enerji Terminali venv'i kullanılır (eptr2 + openpyxl kurulu):
-"/mnt/c/Users/yigit/Desktop/EnerjiPiyasasi/📋 API Ayarları/.venv/bin/python" opera_guncelle.py          # Downloads'taki dosyayı günceller
-... opera_guncelle.py --push                                                                            # + repo kopyası + git push
-... opera_guncelle.py --ay 2026-08 --dosya "/mnt/c/.../Opera Analiz Ağustos 2026.xlsx"                  # yeni ay
+"/mnt/c/Users/yigit/Desktop/EnerjiPiyasasi/📋 API Ayarları/.venv/bin/python" opera_guncelle.py   # ayarlardaki dosyayı günceller
+... opera_guncelle.py --push                                # + repo kopyası + git push
+... opera_guncelle.py --ay 2026-06                          # geçmiş bir ay (dosyası klasörde olmalı)
+... opera_guncelle.py --dosya "C:\...\ozel.xlsx"            # kalıbı ezmek için
 ```
 
 ## Otomasyon

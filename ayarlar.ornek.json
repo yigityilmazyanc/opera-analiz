@@ -1,0 +1,12 @@
+{
+  "_aciklama": "Bu dosyayi 'ayarlar.json' adiyla KOPYALA ve kendi bilgilerini gir. ayarlar.json gitignore'dadir, GitHub'a cikmaz.",
+
+  "api_kullanici": "ornek@mail.com",
+  "api_sifre": "",
+  "api_sifre_dosyasi": "~/.epias_pw",
+  "_api_notu": "Oncelik: EPIAS_PW ortam degiskeni > api_sifre alani > api_sifre_dosyasi. Sifreyi buraya yazarsan dosyayi ASLA baska yere kopyalama.",
+
+  "dosya_klasoru": "C:\\Users\\yigit\\Downloads",
+  "dosya_adi_kalibi": "Opera Analiz {AY} {YIL}.xlsx",
+  "_dosya_notu": "{AY} = Turkce ay adi (Ingilizce karakterlerle: Ocak, Subat, Mart, Nisan, Mayis, Haziran, Temmuz, Agustos, Eylul, Ekim, Kasim, Aralik), {YIL} = 2026. Gercek Turkce yazim (Agustos yerine Ağustos) da otomatik denenir. Klasor yolu Windows (C:\\...) veya WSL (/mnt/c/...) olabilir."
+}
