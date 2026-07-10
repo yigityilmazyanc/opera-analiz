@@ -100,6 +100,8 @@ def main():
     ap.add_argument("--ay", default=dt.date.today().strftime("%Y-%m"))
     ap.add_argument("--dosya", default="", help="ayarlar.json kalıbını ezmek için tam yol")
     ap.add_argument("--push", action="store_true", help="kopyayı repoya koy + git push")
+    ap.add_argument("--sifirdan", action="store_true",
+                    help="tüm veri satırlarını komple temizleyip baştan doldur")
     a = ap.parse_args()
 
     ayar = ayarlari_yukle()
@@ -121,9 +123,16 @@ def main():
     print("-> fiyatlar (mcp/smp/wap) + sistem yönü (mcp-smp-imb)")
     mcp = cek(e, "mcp", bas, bit); smp = cek(e, "smp", bas, bit); wap = cek(e, "wap", bas, bit)
     imb = cek(e, "mcp-smp-imb", bas, bit)
+    print("-> Opera org: GÖP eşleşme (dam-clearing) + İA miktarları (bi-short/bi-long)")
+    gop = cek(e, "dam-clearing", bas, bit, org_id=ORG_ID)
+    ia_sat = cek(e, "bi-short", bas, bit, org_id=ORG_ID)   # İA satış miktarı
+    ia_al  = cek(e, "bi-long",  bas, bit, org_id=ORG_ID)   # İA alış miktarı
     seriler = {"E": ts_dict(imb, "systemStatus"),
                "F": ts_dict(mcp, "price"), "G": ts_dict(smp, "systemMarginalPrice"),
-               "H": ts_dict(mcp, "priceUsd"), "I": ts_dict(wap, "wap")}
+               "H": ts_dict(mcp, "priceUsd"), "I": ts_dict(wap, "wap"),
+               "J": ts_dict(gop, "matchedOffers"),          # GÖP SSM (satış eşleşme)
+               "L": ts_dict(gop, "matchedBids"),            # GÖP SAM (alış eşleşme)
+               "N": ts_dict(ia_sat, "quantity"), "Q": ts_dict(ia_al, "quantity")}
     for ad, (pp_id, uevcb_id, kolonlar) in SANTRALLER.items():
         print(f"-> {ad} (uevm + ilk/son kgüp)")
         seriler[kolonlar[0]] = ts_dict(cek(e, "rt-gen", bas, bit, pp_id=pp_id), "total")
@@ -146,19 +155,32 @@ def main():
                 ws.cell(r, c).value = None; temiz += 1
     if temiz: print(f"Temizlenen kopuk formül hücresi: {temiz}")
 
-    # satır iskeleti (İA sabitleri, K=F*J gibi şirket-içi formüller): yeni gün dolarken boş
-    # hücreler DÜNÜN AYNI SAATİNDEN kopyalanır (formüller satıra çevrilir) — İA miktarı gibi
-    # elle girilen değerler gün gün değişebildiği için en yakın kaynak dün; ilk gün için satır 3.
+    # satır iskeleti (K=F*J, O==F gibi şirket-içi formüller): yeni gün dolarken boş hücreler
+    # DÜNÜN AYNI SAATİNDEN kopyalanır (formüller satıra çevrilir); dün de boşsa satır 3
+    # şablonundan. Şablon, --sifirdan temizliğinden ÖNCE alınır ki iskelet kaybolmasın.
     yonetilen_c = [openpyxl.utils.column_index_from_string(k) for k in ({"A", "B"} | set(seriler))]
+    sablon = {}
+    for c in range(1, ws.max_column + 1):
+        v = ws.cell(ILK_SATIR, c).value
+        if c not in yonetilen_c and v is not None: sablon[c] = v
+
+    if a.sifirdan:
+        n = sum(1 for r in range(ILK_SATIR, ws.max_row + 1) for c in range(1, ws.max_column + 1)
+                if ws.cell(r, c).value is not None)
+        for r in range(ILK_SATIR, ws.max_row + 1):
+            for c in range(1, ws.max_column + 1):
+                if ws.cell(r, c).value is not None: ws.cell(r, c).value = None
+        print(f"Tam temizlik: {n} hücre sıfırlandı, baştan dolduruluyor.")
+
     def iskelet(r):
-        kaynak = r - 24 if r - 24 >= ILK_SATIR else ILK_SATIR
-        if kaynak == r: return
+        kaynak = r - 24
         for c in range(1, ws.max_column + 1):
             if c in yonetilen_c or ws.cell(r, c).value is not None: continue
-            v = ws.cell(kaynak, c).value
+            v, org_r = (ws.cell(kaynak, c).value, kaynak) if kaynak >= ILK_SATIR else (None, None)
+            if v is None: v, org_r = sablon.get(c), ILK_SATIR
             if v is None: continue
             kol = openpyxl.utils.get_column_letter(c)
-            ws.cell(r, c).value = (Translator(v, origin=f"{kol}{kaynak}").translate_formula(f"{kol}{r}")
+            ws.cell(r, c).value = (Translator(v, origin=f"{kol}{org_r}").translate_formula(f"{kol}{r}")
                                    if isinstance(v, str) and v.startswith("=") else v)
 
     yazilan = {k: 0 for k in seriler}

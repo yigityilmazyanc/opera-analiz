@@ -11,6 +11,8 @@ Platformu'ndan (eptr2) doldurur. Ayın başından bugüne, her gün güncelleneb
 | G | SMF (TL/MWh) | `smp` (uzlaşan saatler) |
 | H | PTF (USD/MWh) | `mcp.priceUsd` |
 | I | AOF (TL/MWh) | `wap` (GİP ağırlıklı ort.) |
+| J / L | GÖP SSM / SAM (MWh) | `dam-clearing` org=104782 (matchedOffers / matchedBids) |
+| N / Q | İA Satış / Alış Miktarı (MWh) | `bi-short` / `bi-long` org=104782 |
 | AB / AC / AF | ARPACIK HES: UEVM / İlk KGÜP / Son KGÜP | `rt-gen pp_id=1942` / `kgup-v1` / `kgup` (uevcb 3194132) |
 | AI / AJ / AM | YAVUZ HES: UEVM / İlk KGÜP / Son KGÜP | `rt-gen pp_id=1263` / `kgup-v1` / `kgup` (uevcb 4138) |
 | AP / AQ / AT | MİDİLLİ HES: UEVM / İlk KGÜP / Son KGÜP | `rt-gen pp_id=1265` / `kgup-v1` / `kgup` (uevcb 117864) |
