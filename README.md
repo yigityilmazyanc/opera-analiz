@@ -25,25 +25,26 @@ pip install eptr2 pandas openpyxl
 ```
 
 ### 4) API bilgilerini gir  ← **API BURAYA GİRİLECEK**
-Repo klasöründeki `ayarlar.ornek.json` dosyasını **`ayarlar.json`** adıyla kopyala ve aç:
+Repo klasöründeki `ayarlar.ornek.json` dosyasını **`ayarlar.json`** adıyla kopyala,
+iki alanı doldur, kaydet — **hepsi bu**:
 
 ```json
 {
-  "api_kullanici": "epias-kayit-epostan@ornek.com",   ← EPİAŞ Şeffaflık kullanıcı e-postası
-  "api_sifre": "SIFRENI-BURAYA-YAZ",                  ← EPİAŞ şifren (tercih 1)
-  "api_sifre_dosyasi": "~/.epias_pw",                 ← ya da şifreyi tek satır bu dosyaya koy (tercih 2)
-  "dosya_klasoru": "C:\\Users\\KULLANICI\\Downloads", ← Excel dosyasının bulunduğu klasör
-  "dosya_adi_kalibi": "Opera Analiz {AY} {YIL}.xlsx"
+  "api_kullanici": "EPOSTANIZI-BURAYA-YAZIN",
+  "api_sifre": "SIFRENIZI-BURAYA-YAZIN"
 }
 ```
 
-- **api_kullanici / api_sifre**: EPİAŞ Şeffaflık Platformu (kayit.epias.com.tr) hesabının
-  e-postası ve şifresi. Hesap yoksa oradan ücretsiz açılır.
-- Şifre önceliği: `EPIAS_PW` ortam değişkeni → `api_sifre` alanı → `api_sifre_dosyasi`.
+- Bilgiler EPİAŞ Şeffaflık Platformu (kayit.epias.com.tr) hesabının e-postası ve şifresidir.
+  Hesap yoksa oradan ücretsiz açılır.
+- Geri kalan her şey otomatik: Excel dosyası kullanıcının **Downloads/İndirilenler** klasöründe,
+  `Opera Analiz <Ay> <Yıl>.xlsx` adıyla aranır (ör. `Opera Analiz Agustos 2026.xlsx`;
+  Türkçe yazım "Ağustos" da olur). **Ay değişince ayar değişmez** — yeni ayın dosyasını
+  Downloads'a koymak yeterli.
 - `ayarlar.json` **gitignore'dadır** — şifre GitHub'a asla çıkmaz. Yine de dosyayı kimseyle paylaşma.
-- `{AY}` ayın Türkçe adıdır, İngilizce karakterlerle: Ocak, Subat, Mart, Nisan, Mayis, Haziran,
-  Temmuz, Agustos, Eylul, Ekim, Kasim, Aralik. (Gerçek Türkçe yazım — Ağustos, Eylül — da denenir.)
-  **Ay değişince ayar değişmez**; yeni ayın dosyasını klasöre koymak yeterli.
+- İsteğe bağlı gelişmiş alanlar (gerekirse eklenir): `"dosya_klasoru": "D:\\baska\\klasor"`,
+  `"dosya_adi_kalibi": "..."`, `"api_sifre_dosyasi": "~/.epias_pw"` (şifreyi dosyadan okur;
+  `EPIAS_PW` ortam değişkeni hepsini ezer).
 
 ### 5) Çalıştır
 ```bat

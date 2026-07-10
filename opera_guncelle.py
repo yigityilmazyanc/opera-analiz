@@ -35,13 +35,27 @@ AY_ADI = {1: "Ocak", 2: "Subat", 3: "Mart", 4: "Nisan", 5: "Mayis", 6: "Haziran"
           7: "Temmuz", 8: "Agustos", 9: "Eylul", 10: "Ekim", 11: "Kasim", 12: "Aralik"}
 AY_ADI_TR = {2: "Şubat", 5: "Mayıs", 8: "Ağustos", 9: "Eylül", 11: "Kasım", 12: "Aralık"}
 
+# ayarlar.json'da SADECE api_kullanici + api_sifre zorunlu; gerisi bu varsayılanlarla çalışır.
+VARSAYILAN_AYAR = {
+    "api_sifre": "",
+    "api_sifre_dosyasi": "~/.epias_pw",
+    "dosya_klasoru": "",                 # boş = kullanıcının Downloads/İndirilenler klasörü
+    "dosya_adi_kalibi": "Opera Analiz {AY} {YIL}.xlsx",
+}
+
 def ayarlari_yukle():
-    for ad in ("ayarlar.json", "ayarlar.ornek.json"):
-        p = HERE / ad
-        if p.exists():
-            return {k: v for k, v in json.loads(p.read_text(encoding="utf-8")).items()
-                    if not k.startswith("_")}
-    sys.exit("HATA: ayarlar.json yok (ayarlar.ornek.json'u kopyalayıp doldurun).")
+    p = HERE / "ayarlar.json"
+    if not p.exists():
+        sys.exit("HATA: ayarlar.json yok — ayarlar.ornek.json dosyasını 'ayarlar.json' adıyla "
+                 "kopyalayıp içine EPİAŞ e-postanızı ve şifrenizi yazın.")
+    ayar = {**VARSAYILAN_AYAR,
+            **{k: v for k, v in json.loads(p.read_text(encoding="utf-8")).items()
+               if not k.startswith("_")}}
+    if "BURAYA" in str(ayar.get("api_kullanici", "")).upper() or not ayar.get("api_kullanici"):
+        sys.exit("HATA: ayarlar.json → api_kullanici alanına EPİAŞ e-postanızı yazın.")
+    if "BURAYA" in str(ayar.get("api_sifre", "")).upper():
+        sys.exit("HATA: ayarlar.json → api_sifre alanına EPİAŞ şifrenizi yazın.")
+    return ayar
 
 def yol_cevir(s):
     """Yolu platforma uyarla: WSL'de çalışırken Windows yolu (C:\\...) /mnt/c/... olur;
@@ -62,7 +76,13 @@ def sifre_bul(ayar):
     sys.exit("HATA: şifre yok — EPIAS_PW değişkeni, ayarlar.json api_sifre ya da şifre dosyası gerekli.")
 
 def dosya_bul(ayar, yil, ay):
-    klasor = yol_cevir(ayar["dosya_klasoru"])
+    if ayar["dosya_klasoru"]:
+        klasor = yol_cevir(ayar["dosya_klasoru"])
+    elif os.name == "nt":                # ayar boşsa: kullanıcının İndirilenler klasörü
+        klasor = Path.home() / "Downloads"
+    else:                                # WSL: Windows kullanıcılarının Downloads'ını tara
+        adaylar = list(Path("/mnt/c/Users").glob("*/Downloads")) if Path("/mnt/c/Users").exists() else []
+        klasor = adaylar[0] if adaylar else Path.home() / "Downloads"
     kalip = ayar.get("dosya_adi_kalibi", "Opera Analiz {AY} {YIL}.xlsx")
     adaylar = [kalip.replace("{AY}", AY_ADI[ay]).replace("{YIL}", str(yil))]
     if ay in AY_ADI_TR:  # gerçek Türkçe yazımla da dene (Ağustos, Eylül...)
