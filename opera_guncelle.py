@@ -87,30 +87,56 @@ def main():
         seriler[kolonlar[1]] = ts_dict(cek(e, "kgup-v1", bas, bit, org_id=ORG_ID, uevcb_id=uevcb_id), "toplam")
         seriler[kolonlar[2]] = ts_dict(cek(e, "kgup", bas, bit, org_id=ORG_ID, uevcb_id=uevcb_id), "toplam")
 
+    from openpyxl.formula.translate import Translator
     wb = openpyxl.load_workbook(xlsx)
     ws = wb[SEKME]
     gun_sayisi = ((bas + dt.timedelta(days=40)).replace(day=1) - bas).days
-    yazilan = {k: 0 for k in seriler}
-    for gun in range(1, gun_sayisi + 1):
-        for saat in range(24):
-            r = ILK_SATIR + (gun - 1) * 24 + saat
-            # tarih/saat TÜM ay için yazılır (C=INT(A), D=MONTH(A) formülleri çalışsın)
-            ws.cell(r, 1).value = dt.datetime(yil, ay, gun, saat)
-            ws.cell(r, 2).value = f"{saat:02d}:00"
-            for kolon, s in seriler.items():
-                if (gun, saat) in s:
-                    v = s[(gun, saat)]
-                    ws[f"{kolon}{r}"].value = v if isinstance(v, str) else float(v)
-                    yazilan[kolon] += 1
+    son_satir = ILK_SATIR + gun_sayisi * 24 - 1
+
     # kopuk dış-bağlantı formüllerini temizle: '[1]...' başka bilgisayardaki kaynak dosyaya
     # bakıyordu, bir daha hesaplanamaz — Excel'de 0/#REF çöpü olarak görünüyordu.
     temiz = 0
-    for r in range(ILK_SATIR, ILK_SATIR + gun_sayisi * 24):
+    for r in range(ILK_SATIR, ws.max_row + 1):
         for c in range(1, ws.max_column + 1):
             v = ws.cell(r, c).value
             if isinstance(v, str) and v.startswith("=") and "[1]" in v:
                 ws.cell(r, c).value = None; temiz += 1
     if temiz: print(f"Temizlenen kopuk formül hücresi: {temiz}")
+
+    # satır iskeleti (İA sabitleri, K=F*J gibi şirket-içi formüller): yeni gün dolarken boş
+    # hücreler DÜNÜN AYNI SAATİNDEN kopyalanır (formüller satıra çevrilir) — İA miktarı gibi
+    # elle girilen değerler gün gün değişebildiği için en yakın kaynak dün; ilk gün için satır 3.
+    yonetilen_c = [openpyxl.utils.column_index_from_string(k) for k in ({"A", "B"} | set(seriler))]
+    def iskelet(r):
+        kaynak = r - 24 if r - 24 >= ILK_SATIR else ILK_SATIR
+        if kaynak == r: return
+        for c in range(1, ws.max_column + 1):
+            if c in yonetilen_c or ws.cell(r, c).value is not None: continue
+            v = ws.cell(kaynak, c).value
+            if v is None: continue
+            kol = openpyxl.utils.get_column_letter(c)
+            ws.cell(r, c).value = (Translator(v, origin=f"{kol}{kaynak}").translate_formula(f"{kol}{r}")
+                                   if isinstance(v, str) and v.startswith("=") else v)
+
+    yazilan = {k: 0 for k in seriler}
+    for gun in range(1, gun_sayisi + 1):
+        for saat in range(24):
+            r = ILK_SATIR + (gun - 1) * 24 + saat
+            if any((gun, saat) in s for s in seriler.values()):
+                ws.cell(r, 1).value = dt.datetime(yil, ay, gun, saat)
+                ws.cell(r, 2).value = f"{saat:02d}:00"
+                for kolon, s in seriler.items():
+                    if (gun, saat) in s:
+                        v = s[(gun, saat)]
+                        ws[f"{kolon}{r}"].value = v if isinstance(v, str) else float(v)
+                        yazilan[kolon] += 1
+                iskelet(r)                   # boş kalan iskelet hücrelerini dünden tamamla
+            else:                            # verisi olmayan satır KOMPLE boş kalsın
+                for c in range(1, ws.max_column + 1):
+                    if ws.cell(r, c).value is not None: ws.cell(r, c).value = None
+    for r in range(son_satir + 1, ws.max_row + 1):   # ay bloğu sonrası artık satırlar
+        for c in range(1, ws.max_column + 1):
+            if ws.cell(r, c).value is not None: ws.cell(r, c).value = None
     try:
         wb.save(xlsx)
     except PermissionError:
