@@ -77,19 +77,21 @@ def sifre_bul(ayar):
 
 def dosya_bul(ayar, yil, ay):
     if ayar["dosya_klasoru"]:
-        klasor = yol_cevir(ayar["dosya_klasoru"])
+        klasorler = [yol_cevir(ayar["dosya_klasoru"])]
     elif os.name == "nt":                # ayar boşsa: kullanıcının İndirilenler klasörü
-        klasor = Path.home() / "Downloads"
-    else:                                # WSL: Windows kullanıcılarının Downloads'ını tara
-        adaylar = list(Path("/mnt/c/Users").glob("*/Downloads")) if Path("/mnt/c/Users").exists() else []
-        klasor = adaylar[0] if adaylar else Path.home() / "Downloads"
+        klasorler = [Path.home() / "Downloads"]
+    else:                                # WSL: gerçek Windows kullanıcılarının Downloads'larını tara
+        sistem = {"default", "default user", "public", "all users"}
+        klasorler = [p for p in Path("/mnt/c/Users").glob("*/Downloads")
+                     if p.parent.name.lower() not in sistem] or [Path.home() / "Downloads"]
     kalip = ayar.get("dosya_adi_kalibi", "Opera Analiz {AY} {YIL}.xlsx")
-    adaylar = [kalip.replace("{AY}", AY_ADI[ay]).replace("{YIL}", str(yil))]
+    adlar = [kalip.replace("{AY}", AY_ADI[ay]).replace("{YIL}", str(yil))]
     if ay in AY_ADI_TR:  # gerçek Türkçe yazımla da dene (Ağustos, Eylül...)
-        adaylar.append(kalip.replace("{AY}", AY_ADI_TR[ay]).replace("{YIL}", str(yil)))
-    for ad in adaylar:
-        if (klasor / ad).exists(): return klasor / ad
-    sys.exit(f"HATA: dosya bulunamadı: {klasor} içinde {' veya '.join(adaylar)}")
+        adlar.append(kalip.replace("{AY}", AY_ADI_TR[ay]).replace("{YIL}", str(yil)))
+    for klasor in klasorler:
+        for ad in adlar:
+            if (klasor / ad).exists(): return klasor / ad
+    sys.exit(f"HATA: dosya bulunamadı: {klasorler[0]} içinde {' veya '.join(adlar)}")
 
 ORG_ID = "104782"                  # OPERA ENERJİ A.Ş. (TOPLAYICI) — 40X000000104782K
 # ad → (rt-gen pp_id, kgup uevcb_id, [UEVM, İLK KGÜP, SON KGÜP] sütunları)
