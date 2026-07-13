@@ -66,10 +66,6 @@ schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "python C:\opera-anal
 15:30 seçilme sebebi: yarının PTF'si 14:00'te açıklanır, dünün santral üretimi de yayınlanmış olur.
 Silmek için: `schtasks /Delete /TN "OperaAnaliz" /F`
 
-> Not: Yiğit'in makinesinde bu adım GEREKMEZ — WSL'deki Enerji Terminali sunucusu
-> (`terminal_server.py`) her gün 15:00 sonrası ilk saatlik turda `--push` ile zaten çalıştırıyor;
-> dosya açıksa sonraki saat yeniden dener.
-
 ---
 
 ## Doldurulan sütunlar
