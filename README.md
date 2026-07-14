@@ -47,6 +47,7 @@ iki alanı doldur, kaydet — **hepsi bu**:
   `EPIAS_PW` ortam değişkeni hepsini ezer).
 
 ### 5) Çalıştır
+Repo klasöründeki **`calistir.bat`** dosyasına çift tıkla — ya da `cmd`'de:
 ```bat
 cd C:\opera-analiz
 python opera_guncelle.py
@@ -59,12 +60,13 @@ python opera_guncelle.py --push              & rem + kopyayı repoya koy, git co
 ```
 
 ### 6) Her gün otomatik çalışsın (isteğe bağlı — Görev Zamanlayıcı)
-Yönetici olmayan `cmd`'de tek satır (her gün 15:30'da çalıştırır):
+`cmd`'de tek satır (her gün 15:30'da **sessizce** çalıştırır — pencere açılmaz):
 ```bat
-schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "python C:\opera-analiz\opera_guncelle.py"
+schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "pythonw C:\opera-analiz\opera_guncelle.py"
 ```
 15:30 seçilme sebebi: yarının PTF'si 14:00'te açıklanır, dünün santral üretimi de yayınlanmış olur.
-Silmek için: `schtasks /Delete /TN "OperaAnaliz" /F`
+O saatte çalışamadıysa (bilgisayar kapalıydı, Excel açıktı) tekrar denemez —
+**`calistir.bat`'a çift tıklamak yeterli**. Görevi silmek için: `schtasks /Delete /TN "OperaAnaliz" /F`
 
 ---
 
