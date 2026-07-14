@@ -62,7 +62,7 @@ python opera_guncelle.py --push              & rem + kopyayı repoya koy, git co
 ### 6) Her gün otomatik çalışsın (isteğe bağlı — Görev Zamanlayıcı)
 `cmd`'de tek satır (her gün 15:30'da **sessizce** çalıştırır — pencere açılmaz):
 ```bat
-schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "pythonw C:\opera-analiz\opera_guncelle.py"
+schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "C:\Windows\pyw.exe C:\opera-analiz\opera_guncelle.py"
 ```
 15:30 seçilme sebebi: yarının PTF'si 14:00'te açıklanır, dünün santral üretimi de yayınlanmış olur.
 O saatte çalışamadıysa (bilgisayar kapalıydı, Excel açıktı) tekrar denemez —
