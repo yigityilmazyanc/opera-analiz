@@ -7,47 +7,42 @@ her gün güncellenebilir.
 
 ---
 
-## 🔧 Kurulum (Windows)
+## 🔧 Kurulum (Windows) — 3 adım, tek sefer
 
 ### 1) Python kur
 - https://www.python.org/downloads/ adresinden **Python 3.11+** indir.
 - Kurulumda **"Add python.exe to PATH"** kutusunu MUTLAKA işaretle.
-- Denetim: `cmd` aç → `python --version` yazınca sürüm görünmeli.
 
 ### 2) Bu repoyu indir
 - Git varsa: `git clone https://github.com/<kullanici>/opera-analiz.git`
 - Git yoksa: GitHub'da **Code → Download ZIP** → bir klasöre çıkart (ör. `C:\opera-analiz`).
 
-### 3) Gerekli paketleri kur
-`cmd` içinde:
-```bat
-pip install eptr2 pandas openpyxl pywin32
-```
-(`pywin32` yalnız e-posta/PDF adımı için — kullanmayacaksan gerekmez.)
-
-### 4) API bilgilerini gir  ← **API BURAYA GİRİLECEK**
-Repo klasöründeki `ayarlar.ornek.json` dosyasını **`ayarlar.json`** adıyla kopyala,
-iki alanı doldur, kaydet — **hepsi bu**:
+### 3) `kurulum.bat`'a çift tıkla  ← **gerisini bu yapar**
+- Gerekli paketleri kurar (`eptr2 pandas openpyxl pywin32`),
+- `ayarlar.json`'u oluşturur ve Not Defteri'nde açar — alanları doldur, kaydet:
 
 ```json
 {
-  "api_kullanici": "EPOSTANIZI-BURAYA-YAZIN",
-  "api_sifre": "SIFRENIZI-BURAYA-YAZIN"
+  "api_kullanici": "EPOSTANIZI-BURAYA-YAZIN",      ← EPİAŞ Şeffaflık e-postası
+  "api_sifre":     "SIFRENIZI-BURAYA-YAZIN",       ← EPİAŞ şifresi
+  "mail_gonderen": "GONDEREN-GMAIL-ADRESI",        ← e-posta göndermek istersen
+  "mail_sifre":    "GMAIL-UYGULAMA-SIFRESI",
+  "mail_kime":     "ALICI-ADRES"
 }
 ```
 
-- Bilgiler EPİAŞ Şeffaflık Platformu (kayit.epias.com.tr) hesabının e-postası ve şifresidir.
-  Hesap yoksa oradan ücretsiz açılır.
-- Geri kalan her şey otomatik: Excel dosyası kullanıcının **Downloads/İndirilenler** klasöründe,
-  `Opera Analiz <Ay> <Yıl>.xlsx` adıyla aranır (ör. `Opera Analiz Agustos 2026.xlsx`;
-  Türkçe yazım "Ağustos" da olur). **Ay değişince ayar değişmez** — yeni ayın dosyasını
-  Downloads'a koymak yeterli.
-- `ayarlar.json` **gitignore'dadır** — şifre GitHub'a asla çıkmaz. Yine de dosyayı kimseyle paylaşma.
+- EPİAŞ hesabı yoksa kayit.epias.com.tr adresinden ücretsiz açılır.
+- Excel dosyası **Downloads/İndirilenler** klasöründe `Opera Analiz <Ay> <Yıl>.xlsx`
+  adıyla aranır (ör. `Opera Analiz Agustos 2026.xlsx`; Türkçe yazım "Ağustos" da olur).
+  **Ay değişince ayar değişmez** — yeni ayın dosyasını Downloads'a koymak yeterli.
+- `ayarlar.json` **gitignore'dadır** — şifreler GitHub'a asla çıkmaz. Yine de kimseyle paylaşma.
 - İsteğe bağlı gelişmiş alanlar (gerekirse eklenir): `"dosya_klasoru": "D:\\baska\\klasor"`,
   `"dosya_adi_kalibi": "..."`, `"api_sifre_dosyasi": "~/.epias_pw"` (şifreyi dosyadan okur;
-  `EPIAS_PW` ortam değişkeni hepsini ezer).
+  `EPIAS_PW` ortam değişkeni hepsini ezer), `"piyasa_dosya"` (Piyasa Excel'inin tam yolu).
 
-### 5) Çalıştır
+Kurulum bitti — günlük kullanım aşağıda.
+
+### 4) Çalıştır
 Repo klasöründeki **`calistir.bat`** dosyasına çift tıkla — ya da `cmd`'de:
 ```bat
 cd C:\opera-analiz
@@ -60,7 +55,7 @@ python opera_guncelle.py --ay 2026-06        & rem geçmiş bir ay (dosyası kla
 python opera_guncelle.py --push              & rem + kopyayı repoya koy, git commit + push (git ister)
 ```
 
-### 6) Her gün otomatik çalışsın (isteğe bağlı — Görev Zamanlayıcı)
+### 5) Her gün otomatik çalışsın (isteğe bağlı — Görev Zamanlayıcı)
 `cmd`'de tek satır (her gün 15:30'da **sessizce** çalıştırır — pencere açılmaz):
 ```bat
 schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "C:\Windows\pyw.exe C:\opera-analiz\opera_guncelle.py"
@@ -69,7 +64,7 @@ schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "C:\Windows\pyw.exe C
 O saatte çalışamadıysa (bilgisayar kapalıydı, Excel açıktı) tekrar denemez —
 **`calistir.bat`'a çift tıklamak yeterli**. Görevi silmek için: `schtasks /Delete /TN "OperaAnaliz" /F`
 
-### 7) Raporu e-posta ile gönder — `gonder.bat` (çift tıkla)
+### 6) Raporu e-posta ile gönder — `gonder.bat` (çift tıkla)
 **`gonder.bat`** üç adımı arka arkaya yapar:
 1. Opera Analiz verilerini günceller,
 2. (yan klasörde `piyasa-analiz` varsa) Piyasa Analiz verilerini günceller,
