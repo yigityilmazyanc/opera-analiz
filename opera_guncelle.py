@@ -6,6 +6,7 @@ Opera Analiz — EPİAŞ Şeffaflık verilerini Excel'e işler.
   Santral blokları (UEVM ← gerçek zamanlı üretim, İLK KGÜP ← kgup-v1, SON KGÜP ← kgup):
     ARPACIK HES  → AB / AC / AF     YAVUZ HES → AI / AJ / AM     MİDİLLİ HES → AP / AQ / AT
 Ayrıca Tarih (A) ve Saat (B) hücreleri gerçek değerle yazılır (kopuk dış-bağlantı formülleri yerine).
+"GES Üretim" sekmesi: Midilli HES'in hibrit güneş üretimi (rt-gen 'sun') → E, PTF TL/USD → F/G.
 
 Ayarlar (API kullanıcısı/şifresi, Excel klasörü, dosya adı kalıbı): ayarlar.json —
 yoksa ayarlar.ornek.json'u o adla kopyalayıp doldur. Dosya adı içinde bulunulan aya göre
@@ -159,9 +160,13 @@ def main():
                "J": ts_dict(gop, "matchedOffers"),          # GÖP SSM (satış eşleşme)
                "L": ts_dict(gop, "matchedBids"),            # GÖP SAM (alış eşleşme)
                "N": ts_dict(ia_sat, "quantity"), "Q": ts_dict(ia_al, "quantity")}
+    ges_sun = {}
     for ad, (pp_id, uevcb_id, kolonlar) in SANTRALLER.items():
         print(f"-> {ad} (uevm + ilk/son kgüp)")
-        seriler[kolonlar[0]] = ts_dict(cek(e, "rt-gen", bas, bit, pp_id=pp_id), "total")
+        rt = cek(e, "rt-gen", bas, bit, pp_id=pp_id)
+        seriler[kolonlar[0]] = ts_dict(rt, "total")
+        if ad == "MİDİLLİ HES":                       # hibrit GES: güneş kolonu ayrı sekmeye gider
+            ges_sun = ts_dict(rt, "sun")
         seriler[kolonlar[1]] = ts_dict(cek(e, "kgup-v1", bas, bit, org_id=ORG_ID, uevcb_id=uevcb_id), "toplam")
         seriler[kolonlar[2]] = ts_dict(cek(e, "kgup", bas, bit, org_id=ORG_ID, uevcb_id=uevcb_id), "toplam")
 
@@ -228,12 +233,37 @@ def main():
     for r in range(son_satir + 1, ws.max_row + 1):   # ay bloğu sonrası artık satırlar
         for c in range(1, ws.max_column + 1):
             if ws.cell(r, c).value is not None: ws.cell(r, c).value = None
+
+    # --- "GES Üretim" sekmesi: Midilli HES'in hibrit güneş üretimi (rt-gen 'sun') ---
+    # Başlık 1. satır, veri 2. satırdan: satır = 2 + (gün-1)*24 + saat.
+    # A=Tarih B=Saat E=Üretim Miktarı F=PTF TL G=PTF USD; C/D/H/I sekmenin kendi formülleri.
+    n_ges = 0
+    if "GES Üretim" in wb.sheetnames and ges_sun:
+        gs = wb["GES Üretim"]
+        GES_ILK, ges_c = 2, (1, 2, 5, 6, 7)
+        for gun in range(1, gun_sayisi + 1):
+            for saat in range(24):
+                r = GES_ILK + (gun - 1) * 24 + saat
+                if (gun, saat) in ges_sun:
+                    gs.cell(r, 1).value = dt.datetime(yil, ay, gun, saat)
+                    gs.cell(r, 2).value = f"{saat:02d}:00"
+                    gs.cell(r, 5).value = float(ges_sun[(gun, saat)])
+                    for c, s in ((6, seriler["F"]), (7, seriler["H"])):
+                        if (gun, saat) in s: gs.cell(r, c).value = float(s[(gun, saat)])
+                    n_ges += 1
+                else:   # veri yoksa yönetilen hücreler boş (eski 0 sabitleri ve kopuk #REF! dahil)
+                    for c in ges_c:
+                        if gs.cell(r, c).value is not None: gs.cell(r, c).value = None
+        for r in range(GES_ILK + gun_sayisi * 24, gs.max_row + 1):   # ay bloğu sonrası
+            for c in ges_c:
+                if gs.cell(r, c).value is not None: gs.cell(r, c).value = None
     try:
         wb.save(xlsx)
     except PermissionError:
         sys.exit("HATA: Excel dosyası AÇIK — kapatıp yeniden çalıştırın (kaydedilemedi).")
     ozet = ", ".join(f"{k}:{n}" for k, n in yazilan.items())
     print(f"Yazıldı ({xlsx.name}) — hücre sayıları: {ozet}")
+    if n_ges: print(f"GES Üretim sekmesi (Midilli güneş): {n_ges} saat yazıldı")
 
     if a.push:
         kopya = HERE / xlsx.name

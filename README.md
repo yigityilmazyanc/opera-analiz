@@ -88,6 +88,10 @@ O saatte çalışamadıysa (bilgisayar kapalıydı, Excel açıktı) tekrar dene
 Org: OPERA ENERJİ A.Ş. (TOPLAYICI), org_id 104782 (40X000000104782K).
 K, M, O, P, R, S gibi tutar sütunları Excel formülü olarak korunur ve bu verilerden hesaplanır.
 
+**"GES Üretim" sekmesi** de doldurulur: Midilli HES'in hibrit güneş üretimi
+(`rt-gen pp_id=1265` → `sun` kolonu) E sütununa, PTF TL/USD F/G'ye yazılır;
+Tutar (H/I) ve günlük özet (N/O/P) sekmenin kendi formülleriyle hesaplanır.
+
 ## Veri zamanlaması (bilinçli boşluklar)
 - **PTF**: yarının 24 saati bir gün önce 14:00'te tek seferde açıklanır → hep eksiksiz.
 - **SMF + Sistem Yönü**: uzlaştırma ~4-8 saat geriden, bazı saatler (özellikle 00:00) daha geç →
