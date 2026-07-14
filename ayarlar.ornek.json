@@ -1,4 +1,7 @@
 {
   "api_kullanici": "EPOSTANIZI-BURAYA-YAZIN",
-  "api_sifre": "SIFRENIZI-BURAYA-YAZIN"
+  "api_sifre": "SIFRENIZI-BURAYA-YAZIN",
+  "mail_gonderen": "GONDEREN-GMAIL-ADRESI",
+  "mail_sifre": "GMAIL-UYGULAMA-SIFRESI",
+  "mail_kime": "ALICI-ADRES"
 }

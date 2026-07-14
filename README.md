@@ -21,8 +21,9 @@ her gün güncellenebilir.
 ### 3) Gerekli paketleri kur
 `cmd` içinde:
 ```bat
-pip install eptr2 pandas openpyxl
+pip install eptr2 pandas openpyxl pywin32
 ```
+(`pywin32` yalnız e-posta/PDF adımı için — kullanmayacaksan gerekmez.)
 
 ### 4) API bilgilerini gir  ← **API BURAYA GİRİLECEK**
 Repo klasöründeki `ayarlar.ornek.json` dosyasını **`ayarlar.json`** adıyla kopyala,
@@ -67,6 +68,27 @@ schtasks /Create /SC DAILY /ST 15:30 /TN "OperaAnaliz" /TR "C:\Windows\pyw.exe C
 15:30 seçilme sebebi: yarının PTF'si 14:00'te açıklanır, dünün santral üretimi de yayınlanmış olur.
 O saatte çalışamadıysa (bilgisayar kapalıydı, Excel açıktı) tekrar denemez —
 **`calistir.bat`'a çift tıklamak yeterli**. Görevi silmek için: `schtasks /Delete /TN "OperaAnaliz" /F`
+
+### 7) Raporu e-posta ile gönder — `gonder.bat` (çift tıkla)
+**`gonder.bat`** üç adımı arka arkaya yapar:
+1. Opera Analiz verilerini günceller,
+2. (yan klasörde `piyasa-analiz` varsa) Piyasa Analiz verilerini günceller,
+3. **Aylık Rapor + Günlük Rapor** sekmelerini **tek PDF**'e çevirir (Excel kurulu olmalı),
+   yanına **Piyasa Analiz `<Yıl>`.xlsx**'i ekler ve tek e-postayla gönderir.
+
+Sadece veri güncellemek istiyorsan `calistir.bat` yeterli — mail atmaz.
+
+Mail için `ayarlar.json`'a üç alan eklenir:
+```json
+  "mail_gonderen": "gonderen@gmail.com",
+  "mail_sifre":    "GMAIL-UYGULAMA-SIFRESI",
+  "mail_kime":     "alici@ornek.com"
+```
+- `mail_sifre` normal Gmail şifresi DEĞİLDİR: myaccount.google.com → **Güvenlik** →
+  **2 Adımlı Doğrulama** (açık olmalı) → **Uygulama şifreleri** → üretilen 16 haneli şifre.
+- `mail_kime` virgülle birden çok alıcı alabilir.
+- Excel dosyaları **açıkken de** PDF üretilebilir; ama veriler güncellenemez —
+  `gonder.bat` bu durumda uyarı gösterip mevcut haliyle gönderir.
 
 ---
 
